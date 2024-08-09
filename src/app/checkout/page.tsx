@@ -14,7 +14,7 @@ const CheckoutForm = () => {
   const elements = useElements();
 
   useEffect(() => {
-    fetch('http://localhost:3001/create-payment-intent', {
+    fetch('https://flight-search-backend-z09f.onrender.com//create-payment-intent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ amount: 1000 }) // $10.00

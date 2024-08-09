@@ -18,7 +18,7 @@ const fontBody = Space_Mono({
   weight:"700"
 })
 
-export default function Layout({ children }) {
+export default function Layout({ children }:{children: any}) {
   return (
     <html lang="en">
       <body 
