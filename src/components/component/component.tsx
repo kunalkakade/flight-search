@@ -68,8 +68,8 @@ export function Component() {
                 <label htmlFor="passengers" className="block text-sm font-medium text-gray-700">
                   Passengers
                 </label>
-                <Select id="passengers">
-                  <SelectTrigger>
+                <Select >
+                  <SelectTrigger id="passengers">
                     <SelectValue placeholder="1 passenger" />
                   </SelectTrigger>
                   <SelectContent>
@@ -93,8 +93,8 @@ export function Component() {
                 <label htmlFor="airline" className="block text-sm font-medium text-gray-700">
                   Airline
                 </label>
-                <Select id="airline">
-                  <SelectTrigger>
+                <Select >
+                  <SelectTrigger id="airline">
                     <SelectValue placeholder="All airlines" />
                   </SelectTrigger>
                   <SelectContent>
@@ -110,8 +110,8 @@ export function Component() {
                 <label htmlFor="departure-time" className="block text-sm font-medium text-gray-700">
                   Departure Time
                 </label>
-                <Select id="departure-time">
-                  <SelectTrigger>
+                <Select >
+                  <SelectTrigger id="departure-time">
                     <SelectValue placeholder="Any time" />
                   </SelectTrigger>
                   <SelectContent>
@@ -126,8 +126,8 @@ export function Component() {
                 <label htmlFor="arrival-time" className="block text-sm font-medium text-gray-700">
                   Arrival Time
                 </label>
-                <Select id="arrival-time">
-                  <SelectTrigger>
+                <Select>
+                  <SelectTrigger  id="arrival-time">
                     <SelectValue placeholder="Any time" />
                   </SelectTrigger>
                   <SelectContent>
@@ -142,8 +142,8 @@ export function Component() {
                 <label htmlFor="stops" className="block text-sm font-medium text-gray-700">
                   Stops
                 </label>
-                <Select id="stops">
-                  <SelectTrigger>
+                <Select>
+                  <SelectTrigger  id="stops">
                     <SelectValue placeholder="Any stops" />
                   </SelectTrigger>
                   <SelectContent>
