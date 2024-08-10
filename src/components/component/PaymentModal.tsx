@@ -4,10 +4,10 @@ import { Elements, CardElement, useStripe, useElements } from '@stripe/react-str
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "");
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "pk_test_51PlTskDI9pAomXvv8uojWKEciXuij7SAfVK306ayxzqLrkEPz3oCOsVQEtbKXkoI4sqWiC8WAl2b0ksbunltgtCt00LkrGRphP");
 
 const CheckoutForm = ({ amount, onSuccess, onError, currencyCode }:any) => {
-  const [clientSecret, setClientSecret] = useState('pk_test_51PlTskDI9pAomXvv8uojWKEciXuij7SAfVK306ayxzqLrkEPz3oCOsVQEtbKXkoI4sqWiC8WAl2b0ksbunltgtCt00LkrGRphP');
+  const [clientSecret, setClientSecret] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const stripe = useStripe();
