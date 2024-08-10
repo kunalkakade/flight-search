@@ -109,6 +109,22 @@ interface Airport {
     { iataCode: 'YEG', name: 'Edmonton International Airport', city: 'Edmonton', country: 'Canada' },
     { iataCode: 'BHX', name: 'Birmingham Airport', city: 'Birmingham', country: 'UK' },
     { iataCode: 'ADL', name: 'Adelaide Airport', city: 'Adelaide', country: 'Australia' },
+    { iataCode: 'DXB', name: 'Dubai International Airport', city: 'Dubai', country: 'United Arab Emirates' },
+    { iataCode: 'RUH', name: 'King Khalid International Airport', city: 'Riyadh', country: 'Saudi Arabia' },
+    { iataCode: 'JED', name: 'King Abdulaziz International Airport', city: 'Jeddah', country: 'Saudi Arabia' },
+    { iataCode: 'DOH', name: 'Hamad International Airport', city: 'Doha', country: 'Qatar' },
+    { iataCode: 'LHR', name: 'London Heathrow Airport', city: 'London', country: 'United Kingdom' },
+    { iataCode: 'JFK', name: 'John F. Kennedy International Airport', city: 'New York City', country: 'United States' },
+    { iataCode: 'BOM', name: 'Chhatrapati Shivaji Maharaj International Airport', city: 'Mumbai', country: 'India' },
+    { iataCode: 'BLR', name: 'Kempegowda International Airport', city: 'Bangalore', country: 'India' },  
+    { iataCode: 'DXB', name: 'Dubai International Airport', city: 'Dubai', country: 'United Arab Emirates' },
+    { iataCode: 'RUH', name: 'King Khalid International Airport', city: 'Riyadh', country: 'Saudi Arabia' },
+    { iataCode: 'JED', name: 'King Abdulaziz International Airport', city: 'Jeddah', country: 'Saudi Arabia' },
+    { iataCode: 'DOH', name: 'Hamad International Airport', city: 'Doha', country: 'Qatar' },
+    { iataCode: 'LHR', name: 'London Heathrow Airport', city: 'London', country: 'United Kingdom' },
+    { iataCode: 'JFK', name: 'John F. Kennedy International Airport', city: 'New York City', country: 'United States' },
+    { iataCode: 'BOM', name: 'Chhatrapati Shivaji Maharaj International Airport', city: 'Mumbai', country: 'India' },
+    { iataCode: 'BLR', name: 'Kempegowda International Airport', city: 'Bangalore', country: 'India' }
   ];
   
   export function searchAirports(keyword: string): Airport[] {
