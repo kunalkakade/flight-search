@@ -1,4 +1,5 @@
-
+"use client";
+import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
@@ -6,27 +7,237 @@ import { Calendar } from "@/components/ui/calendar"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command"
 import { JSX, SVGProps } from "react"
 
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleString('en-US', {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric'
+  });
+};
+
+const formatDuration = (duration: string) => {
+  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+  if (!match) return 'Invalid duration';
+  
+  const hours = match[1] ? parseInt(match[1]) : 0;
+  const minutes = match[2] ? parseInt(match[2]) : 0;
+  
+  if (hours === 0 && minutes === 0) return 'Invalid duration';
+  
+  let result = '';
+  if (hours > 0) result += `${hours}h `;
+  if (minutes > 0) result += `${minutes}m`;
+  return result.trim();
+};
+
 export function Component() {
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [departureDate, setDepartureDate] = useState<Date | undefined>(undefined);
+  const [returnDate, setReturnDate] = useState<Date | undefined>(undefined);
+  const [passengers, setPassengers] = useState("1");
+  const [flights, setFlights] = useState({ data: [], fromCache: false });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [airline, setAirline] = useState("all");
+  const [departureTime, setDepartureTime] = useState("any");
+  const [arrivalTime, setArrivalTime] = useState("any");
+  const [stops, setStops] = useState("any");
+  
+  const [airports, setAirports] = useState([]);
+  const [airlines, setAirlines] = useState([]);
+  const [fromOptions, setFromOptions] = useState([]);
+  const [toOptions, setToOptions] = useState([]);
+
+  useEffect(() => {
+    fetchAirports();
+    fetchAirlines();
+  }, []);
+
+  const fetchAirports = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/airports`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch airports');
+      }
+      const data = await response.json();
+      setAirports(data);
+    } catch (error) {
+      console.error('Error fetching airports:', error);
+    }
+  };
+
+  const fetchAirlines = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/airlines`);
+      const data = await response.json();
+      setAirlines(data);
+    } catch (error) {
+      console.error('Error fetching airlines:', error);
+    }
+  };
+
+  const searchAirports = async (keyword: string) => {
+    if (keyword.length < 2) return [];
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/search-airports?keyword=${encodeURIComponent(keyword)}`);
+      if (!response.ok) {
+        throw new Error('Failed to search airports');
+      }
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error searching airports:', error);
+      return [];
+    }
+  };
+
+  const handleFromSearch = async (value: string) => {
+    setFrom(value);
+    if (value.length >= 2) {
+      const options = await searchAirports(value);
+      setFromOptions(options);
+    } else {
+      setFromOptions([]);
+    }
+  };
+
+  const handleToSearch = async (value: string) => {
+    setTo(value);
+    if (value.length >= 2) {
+      const options = await searchAirports(value);
+      setToOptions(options);
+    } else {
+      setToOptions([]);
+    }
+  };
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/search-flights`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            originCode: from,
+            destinationCode: to,
+            departureDate: departureDate?.toISOString().split("T")[0],
+            returnDate: returnDate?.toISOString().split("T")[0],
+            adults: passengers,
+            airline,
+            departureTime,
+            arrivalTime,
+            stops,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch flights");
+      }
+
+      const data = await response.json();
+      setFlights(data);
+    } catch (err) {
+      setError(
+        "An error occurred while searching for flights. Please try again."
+      );
+      console.error("Error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="col-span-1 md:col-span-2">
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold mb-4">Find your flight</h2>
-            <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="from" className="block text-sm font-medium text-gray-700">
                   From
                 </label>
-                <Input id="from" placeholder="Enter departure location" />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Input
+                      id="from"
+                      placeholder="Enter departure location"
+                      value={from}
+                      onChange={(e) => handleFromSearch(e.target.value)}
+                    />
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <Command>
+                      <CommandInput placeholder="Search airports..." />
+                      <CommandEmpty>No airports found.</CommandEmpty>
+                      <CommandGroup>
+                        {fromOptions.map((airport: any) => (
+                          <CommandItem
+                            key={airport.iataCode}
+                            onSelect={() => {
+                              setFrom(airport.iataCode);
+                              setFromOptions([]);
+                            }}
+                          >
+                            {airport.name} ({airport.iataCode})
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div>
                 <label htmlFor="to" className="block text-sm font-medium text-gray-700">
                   To
                 </label>
-                <Input id="to" placeholder="Enter arrival location" />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Input
+                      id="to"
+                      placeholder="Enter arrival location"
+                      value={to}
+                      onChange={(e) => handleToSearch(e.target.value)}
+                    />
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <Command>
+                      <CommandInput placeholder="Search airports..." />
+                      <CommandEmpty>No airports found.</CommandEmpty>
+                      <CommandGroup>
+                        {toOptions.map((airport: any) => (
+                          <CommandItem
+                            key={airport.iataCode}
+                            onSelect={() => {
+                              setTo(airport.iataCode);
+                              setToOptions([]);
+                            }}
+                          >
+                            {airport.name} ({airport.iataCode})
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div>
                 <label htmlFor="departure-date" className="block text-sm font-medium text-gray-700">
@@ -40,11 +251,16 @@ export function Component() {
                       className="w-full justify-start text-left font-normal"
                     >
                       <CalendarDaysIcon className="mr-1 h-4 w-4 -translate-x-1" />
-                      Select date
+                      {departureDate ? departureDate.toDateString() : "Select date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar initialFocus mode="single" />
+                    <Calendar
+                      mode="single"
+                      selected={departureDate}
+                      onSelect={setDepartureDate}
+                      initialFocus
+                    />
                   </PopoverContent>
                 </Popover>
               </div>
@@ -54,13 +270,22 @@ export function Component() {
                 </label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button id="return-date" variant="outline" className="w-full justify-start text-left font-normal">
+                    <Button
+                      id="return-date"
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
                       <CalendarDaysIcon className="mr-1 h-4 w-4 -translate-x-1" />
-                      Select date
+                      {returnDate ? returnDate.toDateString() : "Select date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar initialFocus mode="single" />
+                    <Calendar
+                      mode="single"
+                      selected={returnDate}
+                      onSelect={setReturnDate}
+                      initialFocus
+                    />
                   </PopoverContent>
                 </Popover>
               </div>
@@ -68,7 +293,7 @@ export function Component() {
                 <label htmlFor="passengers" className="block text-sm font-medium text-gray-700">
                   Passengers
                 </label>
-                <Select >
+                <Select value={passengers} onValueChange={setPassengers}>
                   <SelectTrigger id="passengers">
                     <SelectValue placeholder="1 passenger" />
                   </SelectTrigger>
@@ -82,7 +307,9 @@ export function Component() {
                 </Select>
               </div>
               <div className="col-span-1 md:col-span-2">
-                <Button className="w-full">Search Flights</Button>
+                <Button className="w-full" type="submit" disabled={loading}>
+                  {loading ? "Searching..." : "Search Flights"}
+                </Button>
               </div>
             </form>
           </div>
@@ -93,16 +320,17 @@ export function Component() {
                 <label htmlFor="airline" className="block text-sm font-medium text-gray-700">
                   Airline
                 </label>
-                <Select >
+                <Select value={airline} onValueChange={setAirline}>
                   <SelectTrigger id="airline">
                     <SelectValue placeholder="All airlines" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All airlines</SelectItem>
-                    <SelectItem value="american">American Airlines</SelectItem>
-                    <SelectItem value="delta">Delta Air Lines</SelectItem>
-                    <SelectItem value="united">United Airlines</SelectItem>
-                    <SelectItem value="southwest">Southwest Airlines</SelectItem>
+                    {airlines?.map((airline: any) => (
+                      <SelectItem key={airline.iataCode} value={airline.iataCode}>
+                        {airline.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -110,7 +338,7 @@ export function Component() {
                 <label htmlFor="departure-time" className="block text-sm font-medium text-gray-700">
                   Departure Time
                 </label>
-                <Select >
+                <Select value={departureTime} onValueChange={setDepartureTime}>
                   <SelectTrigger id="departure-time">
                     <SelectValue placeholder="Any time" />
                   </SelectTrigger>
@@ -126,8 +354,8 @@ export function Component() {
                 <label htmlFor="arrival-time" className="block text-sm font-medium text-gray-700">
                   Arrival Time
                 </label>
-                <Select>
-                  <SelectTrigger  id="arrival-time">
+                <Select value={arrivalTime} onValueChange={setArrivalTime}>
+                  <SelectTrigger id="arrival-time">
                     <SelectValue placeholder="Any time" />
                   </SelectTrigger>
                   <SelectContent>
@@ -142,8 +370,8 @@ export function Component() {
                 <label htmlFor="stops" className="block text-sm font-medium text-gray-700">
                   Stops
                 </label>
-                <Select>
-                  <SelectTrigger  id="stops">
+                <Select value={stops} onValueChange={setStops}>
+                  <SelectTrigger id="stops">
                     <SelectValue placeholder="Any stops" />
                   </SelectTrigger>
                   <SelectContent>
@@ -158,109 +386,81 @@ export function Component() {
           </div>
           <div className="bg-white rounded-lg shadow-md p-6 mt-8">
             <h2 className="text-2xl font-bold mb-4">Flight Results</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <Card>
-                <CardContent className="grid gap-4">
-                  <div className="flex items-center justify-between">
-                    <div className="font-medium">Flight #AB123</div>
-                    <div className="text-sm bg-green-500 px-1 py-0.5 rounded-md text-foreground">On Time</div>
-                  </div>
-                  <div className="flex flex-row justify-between">
-                    <div className="flex flex-col gap-1">
-                      <div className="text-sm text-muted-foreground">Departure</div>
-                      <div className="flex items-center gap-2">
-                        <div className="text-2xl font-medium">SFO</div>
+            {error && <p className="text-red-500 mb-4">{error}</p>}
+            {flights?.data?.length > 0 ? (
+              <div className="space-y-6">
+                {flights.data.map((flight: any, index: number) => (
+                  <Card key={index} className="overflow-hidden">
+                    <CardHeader>
+                      <CardTitle className="flex justify-between items-center">
+                        <span>Flight #{flight.id}</span>
+                        <span className="text-lg font-normal">
+                          {flight.price.total} {flight.price.currency}
+                        </span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {flight.itineraries[0].segments.map(
+                        (segment: any, segmentIndex: number) => (
+                          <div key={segmentIndex} className="mb-4">
+                            <div className="flex justify-between items-center mb-2">
+                              <div>
+                                <p className="font-semibold">
+                                  {segment.departure.iataCode} →{" "}
+                                  {segment.arrival.iataCode}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  {formatDate(segment.departure.at)} -{" "}
+                                  {formatDate(segment.arrival.at)}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-semibold">
+                                  {segment.carrierCode} {segment.number}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  Duration: {formatDuration(segment.duration)}
+                                </p>
+                              </div>
+                            </div>
+                            {segmentIndex <
+                              flight.itineraries[0].segments.length - 1 && (
+                              <Separator className="my-2" />
+                            )}
+                          </div>
+                        )
+                      )}
+                    </CardContent>
+                    <CardFooter className="bg-gray-50 flex justify-between items-center">
+                      <div>
+                        <p className="text-sm text-gray-600">
+                          Total duration:{" "}
+                          {formatDuration(flight.itineraries[0].duration)}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Stops: {flight.itineraries[0].segments.length - 1}
+                        </p>
                       </div>
-                      <div>10:30 AM</div>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <div className="text-sm text-muted-foreground">Arrival</div>
-                      <div className="flex items-center gap-2">
-                        <div className="text-2xl font-medium">JFK</div>
-                      </div>
-                      <div>5:45 PM</div>
-                    </div>
-                  </div>
-                </CardContent>
-                <Separator />
-                <CardFooter className="flex items-center justify-between flex-row gap-16">
-                  <div className="text-sm text-muted-foreground">Duration: 7h 15m</div>
-                  <Button variant="outline" size="sm">
-                    Book Now
-                  </Button>
-                </CardFooter>
-              </Card>
-              <Card>
-                <CardContent className="grid gap-4">
-                  <div className="flex items-center justify-between">
-                    <div className="font-medium">Flight #CD456</div>
-                    <div className="text-sm bg-yellow-500 px-1 py-0.5 rounded-md text-foreground">Delayed</div>
-                  </div>
-                  <div className="flex flex-row justify-between">
-                    <div className="flex flex-col gap-1">
-                      <div className="text-sm text-muted-foreground">Departure</div>
-                      <div className="flex items-center gap-2">
-                        <div className="text-2xl font-medium">LAX</div>
-                      </div>
-                      <div>11:00 AM</div>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <div className="text-sm text-muted-foreground">Arrival</div>
-                      <div className="flex items-center gap-2">
-                        <div className="text-2xl font-medium">ORD</div>
-                      </div>
-                      <div>6:30 PM</div>
-                    </div>
-                  </div>
-                </CardContent>
-                <Separator />
-                <CardFooter className="flex items-center justify-between flex-row gap-16">
-                  <div className="text-sm text-muted-foreground">Duration: 7h 30m</div>
-                  <Button variant="outline" size="sm">
-                    Book Now
-                  </Button>
-                </CardFooter>
-              </Card>
-              <Card>
-                <CardContent className="grid gap-4">
-                  <div className="flex items-center justify-between">
-                    <div className="font-medium">Flight #EF789</div>
-                    <div className="text-sm bg-red-500 px-1 py-0.5 rounded-md text-foreground">Canceled</div>
-                  </div>
-                  <div className="flex flex-row justify-between">
-                    <div className="flex flex-col gap-1">
-                      <div className="text-sm text-muted-foreground">Departure</div>
-                      <div className="flex items-center gap-2">
-                        <div className="text-2xl font-medium">ORD</div>
-                      </div>
-                      <div>9:00 AM</div>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <div className="text-sm text-muted-foreground">Arrival</div>
-                      <div className="flex items-center gap-2">
-                        <div className="text-2xl font-medium">LGA</div>
-                      </div>
-                      <div>3:15 PM</div>
-                    </div>
-                  </div>
-                </CardContent>
-                <Separator />
-                <CardFooter className="flex items-center justify-between flex-row gap-16">
-                  <div className="text-sm text-muted-foreground">Duration: 6h 15m</div>
-                  <Button variant="outline" size="sm" disabled>
-                    Unavailable
-                  </Button>
-                </CardFooter>
-              </Card>
-            </div>
+                      <Button variant="outline" size="sm">
+                        Select
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <p>No flights found. Please try a different search.</p>
+            )}
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-function CalendarDaysIcon(props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>) {
+function CalendarDaysIcon(
+  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>
+) {
   return (
     <svg
       {...props}
@@ -285,5 +485,5 @@ function CalendarDaysIcon(props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElemen
       <path d="M12 18h.01" />
       <path d="M16 18h.01" />
     </svg>
-  )
+  );
 }

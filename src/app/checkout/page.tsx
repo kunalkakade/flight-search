@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
-const stripePromise = loadStripe('pk_test_51PlTskDI9pAomXvv8uojWKEciXuij7SAfVK306ayxzqLrkEPz3oCOsVQEtbKXkoI4sqWiC8WAl2b0ksbunltgtCt00LkrGRphP');
+const stripePromise = loadStripe(process?.env?.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "");
 
 const CheckoutForm = () => {
   const [clientSecret, setClientSecret] = useState('');

@@ -1,10 +1,15 @@
-import { Component } from "@/components/component/component";
-import Image from "next/image";
+import { SearchForm } from '@/components/component/SearchForm';
 
-export default function Home() {
+const FlightSearchPage: React.FC = () => {
+
   return (
-   <>
-   <Component/>
-   </>
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Flight Search</h1>
+      <SearchForm  />
+      
+    </div>
   );
-}
+};
+
+
+export default FlightSearchPage;
