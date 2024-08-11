@@ -12,8 +12,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-const API_BASE_URL = "http://localhost:3001";
-// const API_BASE_URL = "https://flight-search-backend-z09f.onrender.com";
+// const API_BASE_URL = "http://localhost:3001";
+const API_BASE_URL = "https://flight-search-backend-z09f.onrender.com";
 
 export const SearchForm: React.FC = () => {
   const [from, setFrom] = useState("");
