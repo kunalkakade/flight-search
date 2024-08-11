@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -12,10 +12,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-// const API_BASE_URL = "http://localhost:3001";
-const API_BASE_URL = "https://flight-search-backend-z09f.onrender.com";
-
-
+const API_BASE_URL = "http://localhost:3001";
+// const API_BASE_URL = "https://flight-search-backend-z09f.onrender.com";
 
 export const SearchForm: React.FC = () => {
   const [from, setFrom] = useState("");
@@ -28,6 +26,15 @@ export const SearchForm: React.FC = () => {
   const [serpFlights, setSerpFlights] = useState([]);
   const [isRoundTrip, setIsRoundTrip] = useState(true);
   const [errors, setErrors] = useState<string[]>([]);
+  const [amadeusLoading, setAmadeusLoading] = useState(false);
+  const [serpLoading, setSerpLoading] = useState(false);
+  const [amadeusTime, setAmadeusTime] = useState<number | null>(null);
+  const [serpTime, setSerpTime] = useState<number | null>(null);
+
+
+  useEffect(() => {
+    setLoading(amadeusLoading || serpLoading);
+  }, [amadeusLoading, serpLoading]);
 
   const validateInputs = () => {
     const newErrors: string[] = [];
@@ -56,47 +63,66 @@ export const SearchForm: React.FC = () => {
       return;
     }
 
-    setLoading(true);
+    setAmadeusLoading(true);
+    setSerpLoading(true);
+    setAmadeusFlights([]);
+    setSerpFlights([]);
+    setAmadeusTime(null);
+    setSerpTime(null);
+
+    const searchParams = {
+      originCode: from,
+      destinationCode: to,
+      departureDate: departureDate ? format(departureDate, 'yyyy-MM-dd') : undefined,
+      returnDate: isRoundTrip && returnDate ? format(returnDate, 'yyyy-MM-dd') : undefined,
+      adults: passengers,
+      roundTrip: isRoundTrip
+    };
 
     try {
-      // Call both APIs
-      const [amadeusResponse, serpApiResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/search-flights`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            originCode: from,
-            destinationCode: to,
-            departureDate: departureDate ? format(departureDate, 'yyyy-MM-dd') : undefined,
-            returnDate: isRoundTrip && returnDate ? format(returnDate, 'yyyy-MM-dd') : undefined,
-            adults: passengers,
-          }),
-        }),
-        fetch(`${API_BASE_URL}/serp-flight-search`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            originCode: from,
-            destinationCode: to,
-            departureDate: departureDate ? format(departureDate, 'yyyy-MM-dd') : undefined,
-            returnDate: isRoundTrip && returnDate ? format(returnDate, 'yyyy-MM-dd') : undefined,
-            roundTrip: isRoundTrip,
-          }),
-        }),
-      ]);
+      // Amadeus API call
+      const amadeusStartTime = performance.now();
+      fetch(`${API_BASE_URL}/search-flights`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(searchParams),
+      })
+        .then(response => response.json())
+        .then(data => {
+          setAmadeusFlights(data.data);
+          setAmadeusLoading(false);
+          setAmadeusTime(performance.now() - amadeusStartTime);
+        })
+        .catch(error => {
+          console.error('Error fetching Amadeus flights:', error);
+          setAmadeusLoading(false);
+        });
 
-      const amadeusData = await amadeusResponse.json();
-      const serpApiData = await serpApiResponse.json();
-
-      setAmadeusFlights(amadeusData.data);
-      setSerpFlights(serpApiData.data.best_flights.concat(serpApiData.data.other_flights));
+      // SerpApi call
+      const serpStartTime = performance.now();
+      fetch(`${API_BASE_URL}/serp-flight-search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(searchParams),
+      })
+        .then(response => response.json())
+        .then(data => {
+          setSerpFlights(data.data.best_flights.concat(data.data.other_flights));
+          setSerpLoading(false);
+          setSerpTime(performance.now() - serpStartTime);
+        })
+        .catch(error => {
+          console.error('Error fetching SerpApi flights:', error);
+          setSerpLoading(false);
+        });
     } catch (error) {
-      console.error('Error searching flights:', error);
+      console.error('Error initiating flight search:', error);
       setErrors(["An error occurred while searching for flights. Please try again."]);
-    } finally {
-      setLoading(false);
+      setAmadeusLoading(false);
+      setSerpLoading(false);
     }
   };
+
 
   return (
     <div>
@@ -209,21 +235,21 @@ export const SearchForm: React.FC = () => {
         </div>
       </form>
 
-      {(amadeusFlights.length > 0 || serpFlights.length > 0) && (
+      {(amadeusFlights.length > 0 || serpFlights.length > 0 || loading) && (
         <div className="mt-8">
           <h2 className="text-2xl font-bold mb-4">Search Results</h2>
-          {amadeusFlights.length > 0 && (
-            <div className="mb-8">
-              <h3 className="text-xl font-semibold mb-2">Amadeus Results</h3>
-              <FlightSearchList flights={amadeusFlights} source="amadeus" />
-            </div>
+          {amadeusLoading && <p>Loading Amadeus flights...</p>}
+          {serpLoading && <p>Loading Google Flights results...</p>}
+          {!amadeusLoading && amadeusTime !== null && (
+            <p>Amadeus API response time: {amadeusTime.toFixed(2)} ms</p>
           )}
-          {serpFlights.length > 0 && (
-            <div>
-              {/* <h3 className="text-xl font-semibold mb-2">Google Flights Results</h3> */}
-              <FlightSearchList flights={serpFlights} source="serp" />
-            </div>
+          {!serpLoading && serpTime !== null && (
+            <p>Google Flights API response time: {serpTime.toFixed(2)} ms</p>
           )}
+          <FlightSearchList 
+            amadeusFlights={amadeusFlights} 
+            serpFlights={serpFlights} 
+          />
         </div>
       )}
     </div>
