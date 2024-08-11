@@ -53,7 +53,7 @@ const normalizeFlightData = (flight: any, source: any) => {
     return {
       id: `serp-${flight.departure_token}`,
       price: flight.price,
-      currency: 'USD', // SerpApi seems to always return prices in USD
+      currency: 'AED', // SerpApi seems to always return prices in AED
       segments: flight.flights.map((segment:any) => ({
         departure: {
           airport: segment.departure_airport.id,
