@@ -111,6 +111,12 @@ interface Airport {
     { iataCode: 'DXB', name: 'Dubai International Airport', city: 'Dubai', country: 'United Arab Emirates' },
     { iataCode: 'RUH', name: 'King Khalid International Airport', city: 'Riyadh', country: 'Saudi Arabia' },
     { iataCode: 'JED', name: 'King Abdulaziz International Airport', city: 'Jeddah', country: 'Saudi Arabia' },
+    {
+        iataCode: 'BLR',
+        name: 'Kempegowda International Airport',
+        city: 'Bangalore',
+        country: 'India'
+      }
   ];
   
   export function searchAirports(keyword: string): Airport[] {

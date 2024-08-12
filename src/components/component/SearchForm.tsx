@@ -11,9 +11,41 @@ import FlightSearchList from "./FlightSearchList";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-// const API_BASE_URL = "http://localhost:3001";
-const API_BASE_URL = "https://flight-search-backend-z09f.onrender.com";
+
+// export const API_BASE_URL = "http://localhost:3001";
+export const API_BASE_URL = "https://flight-search-backend-z09f.onrender.com";
+
+// Helper function to format duration
+export const formatDuration = (minutes: number | string) => {
+    if(!minutes){
+        return `no min data found`;
+    }
+  if (typeof minutes === 'string') {
+    const matches = minutes.match(/PT(\d+H)?(\d+M)?/);
+    if (!matches) return '';
+    const hours = matches[1] ? parseInt(matches[1]) : 0;
+    const mins = matches[2] ? parseInt(matches[2]) : 0;
+    return `${hours}h ${mins}m`;
+  } else {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m`;
+  }
+};
+
+export const formatDateTime = (dateTimeString: string) => {
+    const date = new Date(dateTimeString);
+    return date.toLocaleString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: true
+    });
+  };
 
 export const SearchForm: React.FC = () => {
   const [from, setFrom] = useState("");
@@ -30,8 +62,8 @@ export const SearchForm: React.FC = () => {
   const [serpLoading, setSerpLoading] = useState(false);
   const [amadeusTime, setAmadeusTime] = useState<number | null>(null);
   const [serpTime, setSerpTime] = useState<number | null>(null);
-
-
+  const [dataSource, setDataSource] = useState("all");
+  
   useEffect(() => {
     setLoading(amadeusLoading || serpLoading);
   }, [amadeusLoading, serpLoading]);
@@ -107,7 +139,12 @@ export const SearchForm: React.FC = () => {
       })
         .then(response => response.json())
         .then(data => {
-          setSerpFlights(data.data.best_flights.concat(data.data.other_flights));
+            if(data.data.best_flights){
+                setSerpFlights(data.data.best_flights.concat(data.data.other_flights));
+            }else{
+                setSerpFlights(data.data.other_flights);
+            }
+          
           setSerpLoading(false);
           setSerpTime(performance.now() - serpStartTime);
         })
@@ -229,6 +266,24 @@ export const SearchForm: React.FC = () => {
           <Label htmlFor="round-trip">Round-trip</Label>
         </div>
         <div className="col-span-1 md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Data Source</label>
+          <RadioGroup defaultValue="all" onValueChange={setDataSource} className="flex space-x-4">
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="all" id="all" />
+              <Label htmlFor="all">All Sources</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="amadeus" id="amadeus" />
+              <Label htmlFor="amadeus">Amadeus</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="serp" id="serp" />
+              <Label htmlFor="serp">Google Flights</Label>
+            </div>
+          </RadioGroup>
+        </div>
+
+        <div className="col-span-1 md:col-span-2">
           <Button className="w-full" type="submit" disabled={loading}>
             {loading ? "Searching..." : "Search Flights"}
           </Button>
@@ -248,7 +303,16 @@ export const SearchForm: React.FC = () => {
           )}
           <FlightSearchList 
             amadeusFlights={amadeusFlights} 
-            serpFlights={serpFlights} 
+            serpFlights={serpFlights}
+            dataSource={dataSource}
+            searchQuery={{
+                originCode: from,
+                destinationCode: to,
+                departureDate: departureDate ? format(departureDate, 'yyyy-MM-dd') : undefined,
+                returnDate: isRoundTrip && returnDate ? format(returnDate, 'yyyy-MM-dd') : undefined,
+                adults: passengers,
+                roundTrip: isRoundTrip
+            }}
           />
         </div>
       )}
