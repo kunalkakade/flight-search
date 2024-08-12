@@ -265,7 +265,7 @@ export const SearchForm: React.FC = () => {
           />
           <Label htmlFor="round-trip">Round-trip</Label>
         </div>
-        <div className="col-span-1 md:col-span-2">
+        {/* <div className="col-span-1 md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">Data Source</label>
           <RadioGroup defaultValue="all" onValueChange={setDataSource} className="flex space-x-4">
             <div className="flex items-center space-x-2">
@@ -281,7 +281,7 @@ export const SearchForm: React.FC = () => {
               <Label htmlFor="serp">Google Flights</Label>
             </div>
           </RadioGroup>
-        </div>
+        </div> */}
 
         <div className="col-span-1 md:col-span-2">
           <Button className="w-full" type="submit" disabled={loading}>

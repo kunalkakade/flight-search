@@ -44,11 +44,10 @@ interface ReturnFlight {
 
 interface FlightCardProps {
   flight: Flight;
-  onSelect: (flight: Flight) => void;
   searchQuery: any;
 }
 
-const FlightCard: React.FC<FlightCardProps> = ({ flight, onSelect, searchQuery }) => {
+const FlightCard: React.FC<FlightCardProps> = ({ flight, searchQuery }) => {
   const [showReturnFlights, setShowReturnFlights] = useState(false);
   const [returnFlightData, setReturnFlightData] = useState(null);
   const [loading, setLoading] = useState(false);

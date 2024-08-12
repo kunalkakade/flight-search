@@ -13,7 +13,7 @@ export default function CancelPage() {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground text-center mb-6">
-            We're sorry to see you go. Your flight booking has been cancelled and no charges have been made.
+            We are sorry to see you go. Your flight booking has been cancelled and no charges have been made.
           </p>
           <div className="space-y-4">
             <Button asChild className="w-full">

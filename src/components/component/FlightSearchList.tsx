@@ -188,7 +188,7 @@ const FlightSearchList = ({ amadeusFlights, serpFlights, searchQuery }: any) => 
         </Select>
       </div>
       {paginatedFlights.map((flight: any) => (
-        <FlightCard key={flight.id} flight={flight} onSelect={setSelectedFlight} searchQuery={searchQuery} />
+        <FlightCard key={flight.id} flight={flight} searchQuery={searchQuery} />
       ))}
       {selectedFlight && (
         <PaymentModal
